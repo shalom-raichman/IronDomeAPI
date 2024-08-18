@@ -21,6 +21,22 @@ namespace IronDomeAPI.Controllers
             }
             );
         }
+        
+        [HttpGet("{id}/status")]
+        public IActionResult AtackStatus(Guid id)
+        {
+            Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
+            if (attack == null) return NotFound();
+            return StatusCode(
+            StatusCodes.Status200OK,
+            new
+            {
+                id = attack.id,
+                status = attack.status,
+                startAt = new DateTime()
+            }
+            );
+        }
 
 
         [HttpPost]
@@ -37,11 +53,12 @@ namespace IronDomeAPI.Controllers
         
         [HttpPost("{id}/start")]
         [Produces("Application/json")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult StartAttack(Guid id)
         {
             
             Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
+            if (attack == null) return NotFound();
             if(attack.status == "Completed")
             {
                 return StatusCode(
@@ -49,6 +66,34 @@ namespace IronDomeAPI.Controllers
                     new
                     {
                         error = "Cannot start an attack that has already been completed."
+                    });
+            }
+            Task attackTask = Task.Run(() => 
+            {
+                Task.Delay(10000);
+            });
+
+            attack.status = "in progres";
+            return StatusCode(
+                StatusCodes.Status200OK,
+                 new { message = "attack started.", TaskId =  attackTask.Id});
+        }
+
+        [HttpPost("{id}/intercept")]
+        [Produces("Application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult InterceptMissile(Guid id)
+        {
+            
+            Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
+            if (attack == null) return NotFound();
+            if(attack.status == "Completed")
+            {
+                return StatusCode(
+                    400,
+                    new
+                    {
+                        error = "Cannot intercept an attack that has already been completed."
                     });
             }
             Task attackTask = Task.Run(() => 

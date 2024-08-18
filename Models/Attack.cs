@@ -5,7 +5,7 @@
         public Guid? id { get; set; }
         public string origin { get; set; }
         public string type { get; set; }
-        public string status { get; set; }
+        public string? status { get; set; }
 
     }
 }
