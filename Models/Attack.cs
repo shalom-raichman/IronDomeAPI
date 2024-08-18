@@ -5,7 +5,7 @@
         public Guid? id { get; set; }
         public string origin { get; set; }
         public string type { get; set; }
-        public bool status { get; set; } = false;
+        public string status { get; set; }
 
     }
 }

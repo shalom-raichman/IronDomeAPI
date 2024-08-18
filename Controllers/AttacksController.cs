@@ -9,6 +9,20 @@ namespace IronDomeAPI.Controllers
     [ApiController]
     public class AttacksController : ControllerBase
     {
+        [HttpGet]
+        public IActionResult GetAttacks()
+        {
+            return StatusCode(
+            StatusCodes.Status200OK,
+            new
+            {
+                success = true,
+                attacks = DbService.AttacksList.ToArray()
+            }
+            );
+        }
+
+
         [HttpPost]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -16,8 +30,36 @@ namespace IronDomeAPI.Controllers
         {
             Guid newAttackId = Guid.NewGuid();
             newAttack.id = newAttackId;
+            newAttack.status = "Pending";
             DbService.AttacksList.Add(newAttack);
             return StatusCode(StatusCodes.Status201Created, new { succes = true, attack = newAttack });
+        }
+        
+        [HttpPost("{id}/start")]
+        [Produces("Application/json")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        public IActionResult StartAttack(Guid id)
+        {
+            
+            Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
+            if(attack.status == "Completed")
+            {
+                return StatusCode(
+                    400,
+                    new
+                    {
+                        error = "Cannot start an attack that has already been completed."
+                    });
+            }
+            Task attackTask = Task.Run(() => 
+            {
+                Task.Delay(10000);
+            });
+
+            attack.status = "Completed";
+            return StatusCode(
+                StatusCodes.Status200OK,
+                 new { message = "attack started.", TaskId =  attackTask.Id});
         }
         
     }
