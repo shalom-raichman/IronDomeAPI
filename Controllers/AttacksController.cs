@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using IronDomeAPI.Services;
 using IronDomeAPI.Models;
+using Microsoft.EntityFrameworkCore;
+using IronDomeAPI.MiddleWares.Global;
+using IronDomeAPI.MiddlEWares.Attack;
 
 namespace IronDomeAPI.Controllers
 {
@@ -9,6 +12,14 @@ namespace IronDomeAPI.Controllers
     [ApiController]
     public class AttacksController : ControllerBase
     {
+        //private DbContext _context;
+
+        //public AttacksController(DbContext context)
+        //{
+        //    _context = context;
+        //}
+
+        // GET: get all atacks 
         [HttpGet]
         public IActionResult GetAttacks()
         {
@@ -22,6 +33,7 @@ namespace IronDomeAPI.Controllers
             );
         }
         
+        // GET: get status by id
         [HttpGet("{id}/status")]
         public IActionResult AtackStatus(Guid id)
         {
@@ -38,7 +50,7 @@ namespace IronDomeAPI.Controllers
             );
         }
 
-
+        // POST: create new attack
         [HttpPost]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -48,9 +60,25 @@ namespace IronDomeAPI.Controllers
             newAttack.id = newAttackId;
             newAttack.status = "Pending";
             DbService.AttacksList.Add(newAttack);
-            return StatusCode(StatusCodes.Status201Created, new { succes = true, attack = newAttack });
+            //_context.Add(newAttack);
+            //_context.SaveChanges();
+            return StatusCode(
+                StatusCodes.Status201Created,
+                new { succes = true, attack = newAttack }
+            );
         }
+
+        // POST: Define attack missiles amount
+        //[HttpPost]
+        //[Produces("Application/json")]
+        //[ProducesResponseType(StatusCodes.Status201Created)]
+        //public IActionResult DefineAttackMissiles([FromBody] Attack attack)
+        //{
+            
+        //    return StatusCode(StatusCodes.Status201Created, new { succes = true, attack = "newAttack" });
+        //}
         
+        // POST: start attack
         [HttpPost("{id}/start")]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -58,7 +86,7 @@ namespace IronDomeAPI.Controllers
         {
             
             Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
-            if (attack == null) return NotFound();
+            if (attack == null) return StatusCode(404, new {success = false, nessage = "attack not found"});
             if(attack.status == "Completed")
             {
                 return StatusCode(
@@ -74,11 +102,13 @@ namespace IronDomeAPI.Controllers
             });
 
             attack.status = "in progres";
+            attack.StartedAt = DateTime.Now;
             return StatusCode(
                 StatusCodes.Status200OK,
                  new { message = "attack started.", TaskId =  attackTask.Id});
         }
 
+        // POST: intercept missile
         [HttpPost("{id}/intercept")]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -104,7 +134,10 @@ namespace IronDomeAPI.Controllers
             attack.status = "Completed";
             return StatusCode(
                 StatusCodes.Status200OK,
-                 new { message = "attack started.", TaskId =  attackTask.Id});
+                 new {
+                        message = "Attack intercepted.",
+                        status = "Success"
+                 });
         }
         
     }

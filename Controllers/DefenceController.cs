@@ -2,6 +2,7 @@
 using IronDomeAPI.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace IronDomeAPI.Controllers
 {
@@ -9,6 +10,13 @@ namespace IronDomeAPI.Controllers
     [ApiController]
     public class DefenceController : ControllerBase
     {
+        //public readonly DbContext _context;
+        //DefenceController(DbContext context) 
+        //{
+        //    _context = context;
+        //}
+
+
         [HttpPut]
         public IActionResult Missiles(Defence defence)
         {

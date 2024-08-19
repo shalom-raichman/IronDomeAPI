@@ -1,9 +1,17 @@
+using IronDomeAPI.Data;
+using IronDomeAPI.MiddleWares.Global;
+using IronDomeAPI.MiddlEWares.Attack;
+using Microsoft.EntityFrameworkCore;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+//builder.Services.AddDbContext<IronDomeAPIDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'IronDomeAPIDbContext' not found.")));
+
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -17,6 +25,17 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthorization();
+
+app.UseMiddleware<GlobalLoginMiddleWare>();
+
+app.UseWhen(
+    context =>
+        context.Request.Path.StartsWithSegments("/api/attacks"),
+    appBuilder =>
+    {
+        appBuilder.UseMiddleware<AttckLoginMiddleWare>();
+    });
+
 
 app.MapControllers();
 
