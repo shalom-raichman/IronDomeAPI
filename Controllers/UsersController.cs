@@ -18,7 +18,9 @@ namespace IronDomeAPI.Controllers
             // token handler can create token
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            string secretKey = "12345l'trqa ;haiu;bfskjbgiHGOIEQJGPO[GUHE   poiuhghvpiufdh;kjhrp[gouhpajngd;iueh[oiug   ;g  liuhy9=uhgf;b   lkjwnbg;ouhrpy7unrlkgfh;riugf;rikfh;orgfiu678"; //TODO: remove this from code
+            // TODO: remove this from code
+            string secretKey = "1234dyi5fjthgjdndfadsfgdsjfgj464twiyyd5ntyhgkdrue74hsf5ytsusefh55678";
+            
             byte[] key = Encoding.ASCII.GetBytes(secretKey);
 
             // token descriptor describe HOW to create the token
@@ -28,11 +30,11 @@ namespace IronDomeAPI.Controllers
                 Subject = new ClaimsIdentity(
                     new Claim[]
                     {
-                    new Claim(ClaimTypes.Name, "Shubulu"),
+                    new Claim(ClaimTypes.Name, userIP),
                     }
                 ),
                 // expiration time of the token
-                Expires = DateTime.UtcNow.AddMinutes(1),
+                Expires = DateTime.UtcNow.AddMinutes(20),
                 // the secret key of the token
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),

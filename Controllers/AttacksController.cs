@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using IronDomeAPI.Services;
+﻿using IronDomeAPI.Data;
 using IronDomeAPI.Models;
+using IronDomeAPI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using IronDomeAPI.MiddleWares.Global;
-using IronDomeAPI.MiddlEWares.Attack;
 
 namespace IronDomeAPI.Controllers
 {
@@ -12,32 +10,29 @@ namespace IronDomeAPI.Controllers
     [ApiController]
     public class AttacksController : ControllerBase
     {
-        //private DbContext _context;
+        private IronDomeAPIDbContext _context;
 
-        //public AttacksController(DbContext context)
-        //{
-        //    _context = context;
-        //}
-
-        // GET: get all atacks 
-        [HttpGet]
-        public IActionResult GetAttacks()
+        public AttacksController(IronDomeAPIDbContext context)
         {
+            _context = context;
+        }
+
+        // GET: get all atacks
+        [HttpGet]
+        public async Task<IActionResult> GetAttacks()
+        {
+            var attacks = await _context.Attacks.ToListAsync();
             return StatusCode(
             StatusCodes.Status200OK,
-            new
-            {
-                success = true,
-                attacks = DbService.AttacksList.ToArray()
-            }
+            attacks
             );
         }
-        
+
         // GET: get status by id
         [HttpGet("{id}/status")]
-        public IActionResult AtackStatus(Guid id)
+        public async Task<IActionResult> AtackStatus(Guid id)
         {
-            Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
+            Attack attack = await _context.Attacks.FirstOrDefaultAsync(attack => attack.id == id);
             if (attack == null) return NotFound();
             return StatusCode(
             StatusCodes.Status200OK,
@@ -45,7 +40,7 @@ namespace IronDomeAPI.Controllers
             {
                 id = attack.id,
                 status = attack.status,
-                startAt = new DateTime()
+                startAt = attack.StartedAt
             }
             );
         }
@@ -54,17 +49,16 @@ namespace IronDomeAPI.Controllers
         [HttpPost]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        public IActionResult CreateAttack([FromBody] Attack newAttack)
+        public async Task<IActionResult> CreateAttack([FromBody] Attack newAttack)
         {
             Guid newAttackId = Guid.NewGuid();
             newAttack.id = newAttackId;
             newAttack.status = "Pending";
-            DbService.AttacksList.Add(newAttack);
-            //_context.Add(newAttack);
-            //_context.SaveChanges();
+            await _context.AddAsync(newAttack);
+            await _context.SaveChangesAsync();
             return StatusCode(
                 StatusCodes.Status201Created,
-                new { succes = true, attack = newAttack }
+                newAttack
             );
         }
 
@@ -74,20 +68,21 @@ namespace IronDomeAPI.Controllers
         //[ProducesResponseType(StatusCodes.Status201Created)]
         //public IActionResult DefineAttackMissiles([FromBody] Attack attack)
         //{
-            
+
         //    return StatusCode(StatusCodes.Status201Created, new { succes = true, attack = "newAttack" });
         //}
-        
+
         // POST: start attack
         [HttpPost("{id}/start")]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult StartAttack(Guid id)
+        public async Task<IActionResult> StartAttack(Guid id)
         {
-            
-            Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
-            if (attack == null) return StatusCode(404, new {success = false, nessage = "attack not found"});
-            if(attack.status == "Completed")
+
+            Attack attack = _context.Attacks.FirstOrDefault(attack => attack.id == id);
+
+            if (attack == null) return StatusCode(404, new { success = false, nessage = "attack not found" });
+            if (attack.status == "Completed")
             {
                 return StatusCode(
                     400,
@@ -96,28 +91,30 @@ namespace IronDomeAPI.Controllers
                         error = "Cannot start an attack that has already been completed."
                     });
             }
-            Task attackTask = Task.Run(() => 
+            Task attackTask = Task.Run(() =>
             {
                 Task.Delay(10000);
             });
 
             attack.status = "in progres";
             attack.StartedAt = DateTime.Now;
+            _context.Update(attack);
+            await _context.SaveChangesAsync();
             return StatusCode(
                 StatusCodes.Status200OK,
-                 new { message = "attack started.", TaskId =  attackTask.Id});
+                 new { message = "attack started.", TaskId = attackTask.Id });
         }
 
         // POST: intercept missile
         [HttpPost("{id}/intercept")]
         [Produces("Application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult InterceptMissile(Guid id)
+        public async Task<IActionResult> InterceptMissile(Guid id)
         {
-            
-            Attack attack = DbService.AttacksList.FirstOrDefault(attack => attack.id == id);
+
+            Attack attack = await _context.Attacks.FirstOrDefaultAsync(attack => attack.id == id);
             if (attack == null) return NotFound();
-            if(attack.status == "Completed")
+            if (attack.status == "Completed")
             {
                 return StatusCode(
                     400,
@@ -126,19 +123,22 @@ namespace IronDomeAPI.Controllers
                         error = "Cannot intercept an attack that has already been completed."
                     });
             }
-            Task attackTask = Task.Run(() => 
+            Task attackTask = Task.Run(() =>
             {
                 Task.Delay(10000);
             });
 
             attack.status = "Completed";
+            _context.Update(attack);
+            await _context.SaveChangesAsync();
             return StatusCode(
                 StatusCodes.Status200OK,
-                 new {
-                        message = "Attack intercepted.",
-                        status = "Success"
+                 new
+                 {
+                     message = "Attack intercepted.",
+                     status = "Success"
                  });
         }
-        
+
     }
 }

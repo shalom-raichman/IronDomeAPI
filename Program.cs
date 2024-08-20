@@ -1,6 +1,7 @@
 using IronDomeAPI.Data;
 using IronDomeAPI.MiddleWares.Global;
 using IronDomeAPI.MiddlEWares.Attack;
+using IronDomeAPI.MiddlEWares.Global;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -8,8 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-//builder.Services.AddDbContext<IronDomeAPIDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'IronDomeAPIDbContext' not found.")));
+builder.Services.AddDbContext<IronDomeAPIDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'IronDomeAPIDbContext' not found.")));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -24,6 +25,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
+
 app.UseAuthorization();
 
 app.UseMiddleware<GlobalLoginMiddleWare>();
@@ -33,6 +36,7 @@ app.UseWhen(
         context.Request.Path.StartsWithSegments("/api/attacks"),
     appBuilder =>
     {
+        appBuilder.UseMiddleware<JwtValidationMiddleWare>();
         appBuilder.UseMiddleware<AttckLoginMiddleWare>();
     });
 
